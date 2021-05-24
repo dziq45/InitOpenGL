@@ -60,15 +60,15 @@ int main(int argc, char* argv[]) {
       "}\0";
    const char *fragmentShaderSource = "#version 330 core\n"
       "out vec4 FragColor;"
-      "uniform vec4 ourColor;\n"
+      "in vec3 ourColor;"
       "void main()\n"
       "{\n"
-      "FragColor = ourColor;\n"
+      "FragColor = vec4(ourColor, 1.0);\n"
       "}\0"; 
    float vertices[] = {
-     0.0f, 0.5f, 0.0f,1.0f, 0.0f, 0.0f,
-     0.0f, 0.0f, 0.0f,0.0f, 1.0f, 0.0f,
-     0.5f, 0.0f, 0.0f,0.0f, 0.0f, 1.0f
+     -0.5f, -0.5f, 0.0f,1.0f, 0.0f, 0.0f,
+     0.0f, 0.5f, 0.0f,0.0f, 1.0f, 0.0f,
+     0.5f, -0.5f, 0.0f,0.0f, 0.0f, 1.0f
    };
 
    //creating vertex buffer object
@@ -127,6 +127,9 @@ int main(int argc, char* argv[]) {
    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
    glEnableVertexAttribArray(0);
 
+   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3* sizeof(float)));
+   glEnableVertexAttribArray(1);
+
    //unbind VBO and VAO
    glBindBuffer(GL_ARRAY_BUFFER, 0); 
    glBindVertexArray(0);
@@ -142,9 +145,6 @@ int main(int argc, char* argv[]) {
       glClear(GL_COLOR_BUFFER_BIT);
 
       glUseProgram(shaderProgram);
-      float timeValue = glfwGetTime();
-      float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
-      glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
        // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
       glDrawArrays(GL_TRIANGLES, 0, 3);
       
