@@ -10,7 +10,8 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-
+#define SCREEN_WIDTH 1280
+#define SCREEN_HEIGHT 720
 namespace {
    void errorCallback(int error, const char* description) {
       fprintf(stderr, "GLFW error %d: %s\n", error, description);
@@ -28,7 +29,7 @@ namespace {
       glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
       glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-      GLFWwindow* window = glfwCreateWindow(1280, 720, "InitGL", nullptr, nullptr);
+      GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "InitGL", nullptr, nullptr);
       if (!window) {
          fprintf(stderr, "Unable to create GLFW window\n");
          glfwTerminate();
@@ -52,7 +53,7 @@ namespace {
 int main(int argc, char* argv[]) {
    glfwSetErrorCallback(errorCallback);
    GLFWwindow* window = initialize();
-   Shader shader = Shader("twoTex.vs", "twoTex.fs");
+   Shader shader = Shader("coordinates.vs", "twoTex.fs");
    if (!window) {
       return 0;
    }
@@ -129,8 +130,18 @@ int main(int argc, char* argv[]) {
     // either set it manually like so:
    shader.setInt("ourTexture1", 0);
    shader.setInt("ourTexture2", 1);
-   //transformation mat
-
+   
+   //creating model, view and projection matrix
+   //model matrix 
+   glm::mat4 model = glm::mat4(1.0f);
+   model = glm::rotate(model, glm::radians(-65.0f), glm::vec3(1.0f, 0.0f, 0.0f)); 
+   //view matrix
+   glm::mat4 view = glm::mat4(1.0f);
+   // note that we're translating the scene in the reverse direction of where we want to move
+   view = glm::translate(view, glm::vec3(0.0f, 0.0f, -2.0f)); 
+   //projection matrix
+   glm::mat4 projection;
+   projection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
    while (!glfwWindowShouldClose(window)) {
       glClear(GL_COLOR_BUFFER_BIT);
 
@@ -139,10 +150,12 @@ int main(int argc, char* argv[]) {
       glBindTexture(GL_TEXTURE_2D, texture1);
       glActiveTexture(GL_TEXTURE1);
       glBindTexture(GL_TEXTURE_2D, texture2);
-      glm::mat4 trans = glm::mat4(1.0f);
-      trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-      trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
-      shader.setMat4("transform", glm::value_ptr(trans));
+      // glm::mat4 trans = glm::mat4(1.0f);
+      // trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+      // trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+      shader.setMat4("model", glm::value_ptr(model));
+      shader.setMat4("view", glm::value_ptr(view));
+      shader.setMat4("projection", glm::value_ptr(projection));
       shader.use();
        // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
       glDrawArrays(GL_TRIANGLES, 0, 3);
