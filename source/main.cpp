@@ -3,6 +3,9 @@
 #include <iostream>
 #include <stdio.h>
 #include <math.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "Shader.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -49,7 +52,7 @@ namespace {
 int main(int argc, char* argv[]) {
    glfwSetErrorCallback(errorCallback);
    GLFWwindow* window = initialize();
-   Shader shader = Shader("firstShader.vs", "twoTex.fs");
+   Shader shader = Shader("twoTex.vs", "twoTex.fs");
    if (!window) {
       return 0;
    }
@@ -126,6 +129,8 @@ int main(int argc, char* argv[]) {
     // either set it manually like so:
    shader.setInt("ourTexture1", 0);
    shader.setInt("ourTexture2", 1);
+   //transformation mat
+
    while (!glfwWindowShouldClose(window)) {
       glClear(GL_COLOR_BUFFER_BIT);
 
@@ -134,6 +139,10 @@ int main(int argc, char* argv[]) {
       glBindTexture(GL_TEXTURE_2D, texture1);
       glActiveTexture(GL_TEXTURE1);
       glBindTexture(GL_TEXTURE_2D, texture2);
+      glm::mat4 trans = glm::mat4(1.0f);
+      trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+      trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+      shader.setMat4("transform", glm::value_ptr(trans));
       shader.use();
        // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
       glDrawArrays(GL_TRIANGLES, 0, 3);
