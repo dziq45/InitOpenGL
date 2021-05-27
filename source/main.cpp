@@ -55,9 +55,9 @@ int main(int argc, char* argv[]) {
    }
    int width, height, nrChannels;
    int width2, height2, nrChannels2;
+   stbi_set_flip_vertically_on_load(1);
    unsigned char *data = stbi_load("../source/textures/wall.jpg", &width, &height, &nrChannels, 0);
-   unsigned char *data2 = stbi_load("../source/textures/emote.jpg", &width2, &height2, &nrChannels2, 0);
-   // stbi_set_flip_vertically_on_load(1);
+   unsigned char *data2 = stbi_load("../source/textures/face.png", &width2, &height2, &nrChannels2, 0);
    // std::cout << data2 << std::endl;
    // std::cout << data << std::endl;
    unsigned int texture1, texture2;
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
    // set texture filtering parameters
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width2, height2, 0, GL_RGB, GL_UNSIGNED_BYTE, data2);
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width2, height2, 0, GL_RGBA, GL_UNSIGNED_BYTE, data2);
    glGenerateMipmap(GL_TEXTURE_2D);
    float vertices[] = {
       //positions       //colors          //textures
