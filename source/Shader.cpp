@@ -9,8 +9,6 @@ Shader::Shader(const char* vertexShaderName, const char* fragmentShaderName){
     vertexPath += vertexShaderName;
     std::string fragmentPath = "../source/shaders/";
     fragmentPath += fragmentShaderName;
-    std::cout <<vertexPath<<std::endl;
-    std::cout <<fragmentPath<<std::endl;
     std::ifstream vertexFile;
     std::ifstream fragmentFile;
     std::stringstream vertexStream;
@@ -31,8 +29,6 @@ Shader::Shader(const char* vertexShaderName, const char* fragmentShaderName){
     std::string fSource = fragmentStream.str();
     const char* vertexSource = vSource.c_str();
     const char* fragmentSource = fSource.c_str();
-    std::cout << vertexSource << std::endl;
-    std::cout << fragmentSource << std::endl;
     
     unsigned int vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -79,3 +75,18 @@ Shader::Shader(const char* vertexShaderName, const char* fragmentShaderName){
 void Shader::use(){
     glUseProgram(ID);
 }
+
+void Shader::setBool(const std::string &name, bool value) const
+{         
+    glUniform1i(glGetUniformLocation(ID, name.c_str()), (int)value);
+}
+
+void Shader::setInt(const std::string &name, int value) const
+{ 
+    glUniform1i(glGetUniformLocation(ID, name.c_str()), value); 
+}
+
+void Shader::setFloat(const std::string &name, float value) const
+{ 
+    glUniform1f(glGetUniformLocation(ID, name.c_str()), value); 
+} 
