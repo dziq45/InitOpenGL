@@ -10,13 +10,26 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+
+//SCREEN SETTINGS
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
+
+//camera
+glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
+
+float yaw = -90.0f;
+float pitch = 0.0f;
+float lastX = SCREEN_WIDTH/2, lastY = SCREEN_HEIGHT/2;
+float fov = 45.0f;
+bool firstMouse = true;
 namespace {
    void errorCallback(int error, const char* description) {
       fprintf(stderr, "GLFW error %d: %s\n", error, description);
    }
-
+   
    GLFWwindow* initialize() {
       int glfwInitRes = glfwInit();
       if (!glfwInitRes) {
@@ -48,11 +61,65 @@ namespace {
 
       return window;
    }
+   void processInput(GLFWwindow* window, float deltaTime){
+      const float cameraSpeed = 2.3f * deltaTime;
+      if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+         cameraPos += cameraSpeed * cameraFront;
+      if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+         cameraPos -= cameraSpeed * cameraFront;
+      if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+         cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+      if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+   }
+
+   void mouse_callback(GLFWwindow* window, double xpos, double ypos){
+
+      if (firstMouse) // initially set to true
+      {
+          lastX = xpos;
+          lastY = ypos;
+          firstMouse = false;
+      }
+
+      float xoffset = xpos - lastX;
+      float yoffset = lastY - ypos; // reversed since y-coordinates range from bottom to top
+      lastX = xpos;
+      lastY = ypos;
+
+      const float sensitivity = 0.05f;
+      xoffset *= sensitivity;
+      yoffset *= sensitivity;
+
+      yaw   += xoffset;
+      pitch += yoffset;
+
+      if(pitch > 89.0f)
+        pitch =  89.0f;
+      if(pitch < -89.0f)
+        pitch = -89.0f;
+
+           //camera modification based on mouse
+      glm::vec3 direction;
+      direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+      direction.y = sin(glm::radians(pitch));
+      direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+      cameraFront = glm::normalize(direction);
+
+   }
+   void scroll_callback(GLFWwindow* window, double xoffset, double yoffset){
+      fov -= (float)yoffset;
+      if (fov < 1.0f)
+        fov = 1.0f;
+      if (fov > 45.0f)
+        fov = 45.0f; 
+   }
 }
 
 int main(int argc, char* argv[]) {
    glfwSetErrorCallback(errorCallback);
    GLFWwindow* window = initialize();
+
    Shader shader = Shader("coordinates.vs", "twoTex.fs");
    if (!window) {
       return 0;
@@ -62,11 +129,9 @@ int main(int argc, char* argv[]) {
    stbi_set_flip_vertically_on_load(1);
    unsigned char *data = stbi_load("../source/textures/wall.jpg", &width, &height, &nrChannels, 0);
    unsigned char *data2 = stbi_load("../source/textures/face.png", &width2, &height2, &nrChannels2, 0);
-   // std::cout << data2 << std::endl;
-   // std::cout << data << std::endl;
+   std::cout << "siemano" << std::endl;
    unsigned int texture1, texture2;
    glGenTextures(1, &texture1);
-   // std::cout << "Texture0: " << texture1 << " Texture1: " << texture2 << std::endl;
    glBindTexture(GL_TEXTURE_2D, texture1);
 
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
@@ -88,19 +153,31 @@ int main(int argc, char* argv[]) {
    glGenerateMipmap(GL_TEXTURE_2D);
    float vertices[] = {
       //positions       //colors          //textures
-     -0.5f,-0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+     -0.5f,-0.5f,-0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
       0.0f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f,
-      0.5f,-0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f
+      0.5f,-0.5f,-0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,
+
+     -0.5f,-0.5f,-0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+      0.0f,-0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f,
+      0.5f,-0.5f,-0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,
+
+      0.0f,-0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+      0.0f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f,
+     -0.5f,-0.5f,-0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,
+
+      0.0f,-0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+      0.0f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f,
+      0.5f,-0.5f,-0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f
    };
 
    //creating vertex buffer object
    unsigned int VBO;
    glGenBuffers(1, &VBO);
    
+
    //vertex array object
    unsigned int VAO;
    glGenVertexArrays(1, &VAO);  
-
    //binding
    glBindVertexArray(VAO);
    glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -131,20 +208,26 @@ int main(int argc, char* argv[]) {
    shader.setInt("ourTexture1", 0);
    shader.setInt("ourTexture2", 1);
    
+   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+   glfwSetCursorPosCallback(window, mouse_callback);
+   glfwSetScrollCallback(window, scroll_callback); 
    //creating model, view and projection matrix
-   //model matrix 
-   glm::mat4 model = glm::mat4(1.0f);
-   model = glm::rotate(model, glm::radians(-65.0f), glm::vec3(1.0f, 0.0f, 0.0f)); 
-   //view matrix
-   glm::mat4 view = glm::mat4(1.0f);
-   // note that we're translating the scene in the reverse direction of where we want to move
-   view = glm::translate(view, glm::vec3(0.0f, 0.0f, -2.0f)); 
+
+
+   // //view matrix
+   // glm::mat4 view = glm::mat4(1.0f);
+   // // note that we're translating the scene in the reverse direction of where we want to move
+   // view = glm::translate(view, glm::vec3(0.0f, 0.0f, -2.0f)); 
    //projection matrix
    glm::mat4 projection;
-   projection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+
+   float deltaTime = 0.0f;	// Time between current frame and last frame
+   float lastFrame = 0.0f; // Time of last frame
+
+   glEnable(GL_DEPTH_TEST);
    while (!glfwWindowShouldClose(window)) {
       glClear(GL_COLOR_BUFFER_BIT);
-
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             // bind textures on corresponding texture units
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, texture1);
@@ -153,13 +236,23 @@ int main(int argc, char* argv[]) {
       // glm::mat4 trans = glm::mat4(1.0f);
       // trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
       // trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+         //model matrix 
+      glm::mat4 model = glm::mat4(1.0f);
+      // model = glm::rotate(model, (float)glfwGetTime() * glm::radians(100.0f), glm::vec3(0.5f, 1.0f, 0.0f)); 
+
+      glm::mat4 view;
+      view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+      projection = glm::perspective(glm::radians(fov), 800.0f / 600.0f, 0.1f, 100.0f);    
       shader.setMat4("model", glm::value_ptr(model));
       shader.setMat4("view", glm::value_ptr(view));
       shader.setMat4("projection", glm::value_ptr(projection));
       shader.use();
        // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-      glDrawArrays(GL_TRIANGLES, 0, 3);
-      
+      glDrawArrays(GL_TRIANGLES, 0, 12);
+      float currentFrame = glfwGetTime();
+      deltaTime = currentFrame - lastFrame;
+      lastFrame = currentFrame;  
+      processInput(window, deltaTime);
       glfwSwapBuffers(window);
       glfwPollEvents();
    }
